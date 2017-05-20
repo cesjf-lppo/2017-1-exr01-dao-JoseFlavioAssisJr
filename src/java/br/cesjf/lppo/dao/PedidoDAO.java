@@ -1,97 +1,109 @@
 package br.cesjf.lppo.dao;
 
 import br.cesjf.lppo.Pedido;
-import static com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type.Int;
 import java.sql.Connection;
-import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
  * @author José Flávio
  */
 public class PedidoDAO {
-    public List<Pedido> listAll() throws Exception{
-	try {
-	    List<Pedido> pedidos = new ArrayList<>();
-	    Class.forName("org.apache.derby.jdbc.ClientDriver");
-	    Connection conexao = DriverManager.getConnection("jdbc:derby://localhost:1527/lppo-2017-1", "usuario", "senha");
-	    Statement operacao = conexao.createStatement();
-	    ResultSet resultado = operacao.executeQuery("SELECT * FROM pedido");
-	    while(resultado.next()){
-		Pedido novoPedido = new Pedido();
-		novoPedido.setId((int) resultado.getLong("id"));
-                novoPedido.setPedido((int) resultado.getLong("pedido"));
+    
+    private final PreparedStatement opListar;
+    private final PreparedStatement opNovo;
+    private final PreparedStatement opAtualiza;
+    private final PreparedStatement opBuscaPorId;
+    
+    public PedidoDAO() throws Exception {
+        Connection conexao = ConnectionFactory.createConnection();
+        opListar = conexao.prepareStatement("SELECT * FROM pedido");
+        opBuscaPorId = conexao.prepareStatement("SELECT * FROM pedido WHERE id=?");
+        opNovo = conexao.prepareStatement("INSERT INTO pedido (pedido, dono, valor, nome, atualizacao) VALUES(?,?,?,?,?)");
+        opAtualiza = conexao.prepareStatement("UPDATE pedido SET pedido = ?, dono = ?, valor = ?, nome = ?, atualizacao = ? WHERE id = ?");
+    }
+    
+    public List<Pedido> listAll() throws Exception {
+        try {
+            List<Pedido> pedidos = new ArrayList<>();
+            ResultSet resultado = opListar.executeQuery();
+
+            while (resultado.next()) {
+                Pedido novoPedido = new Pedido();
+                novoPedido.setId(resultado.getInt("id"));
+                novoPedido.setPedido(resultado.getInt("pedido"));
                 novoPedido.setDono(resultado.getString("dono"));
                 novoPedido.setValor(resultado.getDouble("valor"));
-		novoPedido.setNome(resultado.getString("nome"));
+                novoPedido.setNome(resultado.getString("nome"));
                 novoPedido.setAtualizacao(resultado.getDate("atualizacao"));
-		
-		PedidoDAO dao = new PedidoDAO();
-                dao.cria(novoPedido);
-                }
-	    return pedidos;
-	    
-	} catch (ClassNotFoundException ex) {
-	    throw new Exception("Driver não encontrado", ex);
-	}
-	catch(SQLException ex){
-	    throw new Exception("Erro ao listar pedidos no banco", ex);
-	    }
-    }
+                
+                pedidos.add(novoPedido);
+            }
 
+            return pedidos;
+            
+        } catch (SQLException ex) {
+            throw new Exception("Erro ao listar os contatos.", ex);
+        }
+    }
+    
+    public Pedido getById(Long id) throws Exception {
+        try {
+            Pedido pedido = null;
+            opBuscaPorId.clearParameters();
+            opBuscaPorId.setLong(1, id);
+            ResultSet resultado = opBuscaPorId.executeQuery();
+
+            while (resultado.next()) {
+                Pedido novoPedido = new Pedido();
+                novoPedido.setId(resultado.getInt("id"));
+                novoPedido.setPedido(resultado.getInt("pedido"));
+                novoPedido.setDono(resultado.getString("dono"));
+                novoPedido.setValor(resultado.getDouble("valor"));
+                novoPedido.setNome(resultado.getString("nome"));
+                novoPedido.setAtualizacao(resultado.getDate("atualizacao"));
+            }
+            
+            return pedido;
+        } catch (SQLException ex) {
+            throw new Exception("Erro ao buscar um pedido no listar!", ex);
+        }
+    }
+    
     public void cria(Pedido novoPedido) throws Exception {
         try {
-            Class.forName("org.apache.derby.jdbc.ClienteDriver");
-            Connection conexao = DriverManager.getConnection("jdbc:derby://localhost:1527/lppo-2017-1","usuario","senha");
-            Statement operacao = conexao.createStatement();
-            operacao.executeUpdate("INSERT INTO pedido (pedido,dono,valor, nome) VALUES ('"
-                    +novoPedido.getPedido()+ "','"
-                    +novoPedido.getDono() + "','"
-                    +novoPedido.getValor()+ "','"
-                    +novoPedido.getNome()+ "')");
-        } catch (ClassNotFoundException ex) {
-            throw new Exception("Erro ao carregar o driver!",ex);
-        }
-        catch (SQLException ex){
-        throw new Exception("Erro ao inserir o pedido",ex);
-        }
-        
-        public int getById(int id)throws Exception {
-            try {
-                Pedido pedido = null;
-                /*opBuscaPorId.clearParameter();
-                opBuscaPorId.setLong(i,id);
-                opBuscaPorId.setLong(1,id);*/
-                ResultSet resultado = opBuscarPorId.executeQuery();
-                
-                if(resultado.next()){
-                pedido = new Pedido();
-                pedido.setId(resultado.getInt("id"));
-                pedido.setPedido(resultado.getInt("pedido"));
-                pedido.setDono(resultado.getString("dono"));
-                pedido.setValor(resultado.getDouble("valor"));
-                pedido.setNome(resultado.getString("nome"));
-                
-                }
-                
-            } catch (Exception e) {
-            }
-        
-        return id;}
+            opNovo.setInt(1, novoPedido.getPedido());
+            opNovo.setString(2, novoPedido.getDono());
+            opNovo.setDouble(3, novoPedido.getValor());
+            opNovo.setString(4, novoPedido.getNome());
+           
+            opNovo.executeUpdate();
 
-    private static class opBuscarPorId {
-
-        public opBuscarPorId() {
+        } catch (SQLException ex) {
+            throw new Exception("Erro ao inserir o contato!", ex);
         }
     }
-        
-    }
+    
+    public void atualiza(Pedido pedido) throws Exception {
+        try {
+            opAtualiza.clearParameters();
+            opAtualiza.setInt(1, pedido.getPedido());
+            opAtualiza.setString(2, pedido.getDono());
+            opAtualiza.setDouble(3, pedido.getValor());
+            opAtualiza.setString(4, pedido.getNome());
+            opAtualiza.setInt(5, pedido.getId());
+            //opAtualiza.setDate(5, pedido.getAtualizacao());
+            
+            opAtualiza.executeUpdate();
+
+
+        } catch (SQLException ex) {
+            throw new Exception("Erro ao atualizar o contato!", ex);
+        }
+}
     
 }
