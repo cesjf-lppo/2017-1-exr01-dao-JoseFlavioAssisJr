@@ -13,20 +13,40 @@ import java.util.List;
  * @author José Flávio
  */
 public class PedidoDAO {
-    
-    private final PreparedStatement opListar;
+
     private final PreparedStatement opNovo;
+    private final PreparedStatement opListar;
+    private final PreparedStatement opListarPorPedido;
+    private final PreparedStatement opListarTotalPorPedido;
+    private final PreparedStatement opListarTotalPorDono;
+    private final PreparedStatement opEditar;
     private final PreparedStatement opAtualiza;
-    private final PreparedStatement opBuscaPorId;
-    
+
     public PedidoDAO() throws Exception {
         Connection conexao = ConnectionFactory.createConnection();
+        opNovo = conexao.prepareStatement("INSERT INTO pedido (numpedido, dono, valor, nome, atualizacao) VALUES(?,?,?,?,?)");
         opListar = conexao.prepareStatement("SELECT * FROM pedido");
-        opBuscaPorId = conexao.prepareStatement("SELECT * FROM pedido WHERE id=?");
-        opNovo = conexao.prepareStatement("INSERT INTO pedido (pedido, dono, valor, nome, atualizacao) VALUES(?,?,?,?,?)");
-        opAtualiza = conexao.prepareStatement("UPDATE pedido SET pedido = ?, dono = ?, valor = ?, nome = ?, atualizacao = ? WHERE id = ?");
+        opListarPorPedido = conexao.prepareStatement("SELECT nome FROM pedido WHERE numpedido=?");
+        opListarTotalPorPedido = conexao.prepareStatement("SELECT SUM(valor) FROM pedido WHERE numpedido=?");
+        opListarTotalPorDono = conexao.prepareStatement("SELECT SUM(valor) FROM pedido WHERE dono=?");
+        opEditar = conexao.prepareStatement("UPDATE pedido SET nome = ?");
+        opAtualiza = conexao.prepareStatement("UPDATE pedido SET numpedido = ?, dono = ?, valor = ?, nome = ?, atualizacao = ? WHERE id = ?");
     }
-    
+
+    public void cria(Pedido novoPedido) throws Exception {
+        try {
+            opNovo.setInt(1, novoPedido.getPedido());
+            opNovo.setString(2, novoPedido.getDono());
+            opNovo.setDouble(3, novoPedido.getValor());
+            opNovo.setString(4, novoPedido.getNome());
+
+            opNovo.executeUpdate();
+
+        } catch (SQLException ex) {
+            throw new Exception("Erro ao inserir o pedido!", ex);
+        }
+    }
+
     public List<Pedido> listAll() throws Exception {
         try {
             List<Pedido> pedidos = new ArrayList<>();
@@ -35,59 +55,77 @@ public class PedidoDAO {
             while (resultado.next()) {
                 Pedido novoPedido = new Pedido();
                 novoPedido.setId(resultado.getInt("id"));
-                novoPedido.setPedido(resultado.getInt("pedido"));
+                novoPedido.setPedido(resultado.getInt("numpedido"));
                 novoPedido.setDono(resultado.getString("dono"));
                 novoPedido.setValor(resultado.getDouble("valor"));
                 novoPedido.setNome(resultado.getString("nome"));
                 novoPedido.setAtualizacao(resultado.getDate("atualizacao"));
-                
+
                 pedidos.add(novoPedido);
             }
 
             return pedidos;
-            
+
         } catch (SQLException ex) {
-            throw new Exception("Erro ao listar os contatos.", ex);
+            throw new Exception("Erro ao listar os pedidos.", ex);
         }
     }
-    
-    public Pedido getById(Long id) throws Exception {
+
+    public Pedido getByPedido(int pedido) throws Exception {
         try {
-            Pedido pedido = null;
-            opBuscaPorId.clearParameters();
-            opBuscaPorId.setLong(1, id);
-            ResultSet resultado = opBuscaPorId.executeQuery();
+            Pedido p = null;
+            opListarPorPedido.clearParameters();
+            opListarPorPedido.setInt(1, pedido);
+            ResultSet resultado = opListarPorPedido.executeQuery();
 
             while (resultado.next()) {
                 Pedido novoPedido = new Pedido();
                 novoPedido.setId(resultado.getInt("id"));
-                novoPedido.setPedido(resultado.getInt("pedido"));
+                novoPedido.setPedido(resultado.getInt("numpedido"));
                 novoPedido.setDono(resultado.getString("dono"));
                 novoPedido.setValor(resultado.getDouble("valor"));
                 novoPedido.setNome(resultado.getString("nome"));
                 novoPedido.setAtualizacao(resultado.getDate("atualizacao"));
             }
-            
-            return pedido;
+
+            return p;
         } catch (SQLException ex) {
             throw new Exception("Erro ao buscar um pedido no listar!", ex);
         }
     }
-    
-    public void cria(Pedido novoPedido) throws Exception {
-        try {
-            opNovo.setInt(1, novoPedido.getPedido());
-            opNovo.setString(2, novoPedido.getDono());
-            opNovo.setDouble(3, novoPedido.getValor());
-            opNovo.setString(4, novoPedido.getNome());
-           
-            opNovo.executeUpdate();
 
+    public Pedido getByDono(String dono) throws Exception {
+        try {
+            Pedido p = null;
+            opListarPorPedido.clearParameters();
+            opListarPorPedido.setString(2, dono);
+            ResultSet resultado = opListarPorPedido.executeQuery();
+
+            while (resultado.next()) {
+                Pedido novoPedido = new Pedido();
+                novoPedido.setId(resultado.getInt("id"));
+                novoPedido.setPedido(resultado.getInt("numpedido"));
+                novoPedido.setDono(resultado.getString("dono"));
+                novoPedido.setValor(resultado.getDouble("valor"));
+                novoPedido.setNome(resultado.getString("nome"));
+                novoPedido.setAtualizacao(resultado.getDate("atualizacao"));
+            }
+
+            return p;
         } catch (SQLException ex) {
-            throw new Exception("Erro ao inserir o contato!", ex);
+            throw new Exception("Erro ao buscar um pedido no listar!", ex);
         }
     }
-    
+
+    public void edita(String nome) throws Exception{
+        try {
+            
+        } catch (SQLException ex) {
+            throw new Exception("Erro ao editar o pedido!", ex);
+        }
+
+    }
+
     public void atualiza(Pedido pedido) throws Exception {
         try {
             opAtualiza.clearParameters();
@@ -97,13 +135,12 @@ public class PedidoDAO {
             opAtualiza.setString(4, pedido.getNome());
             opAtualiza.setInt(5, pedido.getId());
             //opAtualiza.setDate(5, pedido.getAtualizacao());
-            
+
             opAtualiza.executeUpdate();
 
-
         } catch (SQLException ex) {
-            throw new Exception("Erro ao atualizar o contato!", ex);
+            throw new Exception("Erro ao atualizar o pedido!", ex);
         }
-}
-    
+    }
+
 }
