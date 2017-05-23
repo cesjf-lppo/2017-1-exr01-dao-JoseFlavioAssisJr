@@ -14,6 +14,29 @@
     <body>
     <center>
         <h1>Listagem de Pedidos</h1>
+        <br>
+        <table border="1" width="10" cellspacing="1" cellpadding="1">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Pedido</th>
+                    <th>Dono</th>
+                    <th>Valor</th>
+                    <th>Nome</th>
+                    <th>Atualização</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            </tbody>
+        </table>
     </center>
     </body>
 </html>
