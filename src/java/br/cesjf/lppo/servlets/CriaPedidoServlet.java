@@ -13,7 +13,7 @@ import javax.servlet.http.HttpServletResponse;
 
 /**
  *
- * @author aluno
+ * @author José Flávio
  */
 @WebServlet(name = "CriaPedidoServlet", urlPatterns = {"/novo.html"})
 public class CriaPedidoServlet extends HttpServlet {
@@ -36,10 +36,10 @@ public class CriaPedidoServlet extends HttpServlet {
 	
 	try {
 	PedidoDAO dao = new PedidoDAO();
-	dao.cria(novoPedido);
+	dao.novoPedido(novoPedido);
 	} catch (Exception ex) {
 	 request.setAttribute("mensagem", ex);
-	 request.getRequestDispatcher("WEB-INF/adicionaPedidos.jsp").forward(request, response);
+	 request.getRequestDispatcher("WEB-INF/listaPedidos.jsp").forward(request, response);
 	    return;
 	}
 		
