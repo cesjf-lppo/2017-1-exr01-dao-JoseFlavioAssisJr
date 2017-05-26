@@ -28,15 +28,20 @@
             </thead>
             <tbody>
                 <tr>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
+            <c:forEach var="pedido" items="${pedidos}">
+                <tr>
+                    <td><a href="edita.html?id=${pedido.id}">${pedido.id} </a></td> 
+                    <td>
+                        <a href="listarPorPedido.html?pedido=${pedido.numpedido}">${pedido.numpedido}</a></td> 
+                    <td>
+                        <a href="listarPorDono.html?dono=${pedido.dono}">${pedido.dono}</a></td> 
+                    <td>${pedido.valor}</td>
+                    <td>${pedido.nome}</td>
+                    <td>${pedido.atualizacao}</td>
                 </tr>
+            </c:forEach>
             </tbody>
         </table>
     </center>
-    </body>
+</body>
 </html>
