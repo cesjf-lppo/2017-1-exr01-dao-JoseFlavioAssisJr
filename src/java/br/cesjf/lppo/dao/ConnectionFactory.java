@@ -25,7 +25,7 @@ public class ConnectionFactory {
 
         } catch (ClassNotFoundException ex) {
             Logger.getLogger(ConnectionFactory.class.getName()).log(Level.SEVERE, null, ex);
-            throw new Exception("Erro ao carreagr o Driver!", ex);
+            throw new Exception("Erro ao carregar o Driver!", ex);
         } catch (SQLException ex) {
             Logger.getLogger(ConnectionFactory.class.getName()).log(Level.SEVERE, null, ex);
             throw new Exception("Erro ao criar a conexao!", ex);
