@@ -18,28 +18,29 @@ public class PedidoDAO {
     private final PreparedStatement opListar;
     private final PreparedStatement opListarPorPedido;
     private final PreparedStatement opListarTotalPorPedido;
+    private final PreparedStatement opListarPorDono;
     private final PreparedStatement opListarTotalPorDono;
-    private final PreparedStatement opEditar;
+    private final PreparedStatement opBuscarPorId;
     private final PreparedStatement opAtualiza;
 
     public PedidoDAO() throws Exception {
         Connection conexao = ConnectionFactory.createConnection();
         opNovo = conexao.prepareStatement("INSERT INTO pedido (numpedido, dono, valor, nome, atualizacao) VALUES(?,?,?,?,?)");
         opListar = conexao.prepareStatement("SELECT * FROM pedido");
-        opListarPorPedido = conexao.prepareStatement("SELECT nome FROM pedido WHERE numpedido=?");
-        opListarTotalPorPedido = conexao.prepareStatement("SELECT SUM(valor) FROM pedido WHERE numpedido=?");
-        opListarTotalPorDono = conexao.prepareStatement("SELECT SUM(valor) FROM pedido WHERE dono=?");
-        opEditar = conexao.prepareStatement("UPDATE pedido SET nome = ?");
-        opAtualiza = conexao.prepareStatement("UPDATE pedido SET numpedido = ?, dono = ?, valor = ?, nome = ?, atualizacao = ? WHERE id = ?");
+        opListarPorPedido = conexao.prepareStatement("SELECT * FROM pedido WHERE numpedido=?");
+        opListarTotalPorPedido = conexao.prepareStatement("SELECT SUM(valor) as Total FROM pedido WHERE numpedido=?");
+        opListarPorDono = conexao.prepareStatement("SELECT * FROM pedido WHERE dono=?");
+        opListarTotalPorDono = conexao.prepareStatement("SELECT SUM(valor) as Total FROM pedido WHERE dono=?");
+        opBuscarPorId = conexao.prepareStatement("SELECT * FROM pedido WHERE id=?");
+        opAtualiza = conexao.prepareStatement("UPDATE Pedido SET pedido = ?, dono = ?, valor = ?, nome = ?, atualizacao = CURRENT_TIMESTAMP WHERE id = ?");
     }
 
-    public void cria(Pedido novoPedido) throws Exception {
+    public void novoPedido(Pedido novoPedido) throws Exception {
         try {
             opNovo.setInt(1, novoPedido.getPedido());
             opNovo.setString(2, novoPedido.getDono());
             opNovo.setDouble(3, novoPedido.getValor());
             opNovo.setString(4, novoPedido.getNome());
-
             opNovo.executeUpdate();
 
         } catch (SQLException ex) {
@@ -59,11 +60,9 @@ public class PedidoDAO {
                 novoPedido.setDono(resultado.getString("dono"));
                 novoPedido.setValor(resultado.getDouble("valor"));
                 novoPedido.setNome(resultado.getString("nome"));
-                novoPedido.setAtualizacao(resultado.getDate("atualizacao"));
-
+                novoPedido.setAtualizacao(resultado.getTimestamp("atualizacao"));
                 pedidos.add(novoPedido);
             }
-
             return pedidos;
 
         } catch (SQLException ex) {
@@ -71,7 +70,7 @@ public class PedidoDAO {
         }
     }
 
-    public Pedido getByPedido(int pedido) throws Exception {
+    public Pedido ListarPorPedido(int pedido) throws Exception {
         try {
             Pedido p = null;
             opListarPorPedido.clearParameters();
@@ -85,21 +84,35 @@ public class PedidoDAO {
                 novoPedido.setDono(resultado.getString("dono"));
                 novoPedido.setValor(resultado.getDouble("valor"));
                 novoPedido.setNome(resultado.getString("nome"));
-                novoPedido.setAtualizacao(resultado.getDate("atualizacao"));
+                novoPedido.setAtualizacao(resultado.getTimestamp("atualizacao"));
             }
-
             return p;
+
         } catch (SQLException ex) {
             throw new Exception("Erro ao buscar um pedido no listar!", ex);
         }
     }
 
-    public Pedido getByDono(String dono) throws Exception {
+    public float listarTotalPorPedido(int pedido) throws Exception {
+        try {
+            float valor = 0;
+            opListarTotalPorPedido.setLong(1, pedido);
+            ResultSet resultado = opListarTotalPorPedido.executeQuery();
+            while (resultado.next()) {
+                valor = resultado.getFloat(1);
+            }
+            return valor;
+        } catch (SQLException ex) {
+            throw new Exception("Erro ao buscar pedidos no banco", ex);
+        }
+    }
+
+    public Pedido listarPorDono(String dono) throws Exception {
         try {
             Pedido p = null;
-            opListarPorPedido.clearParameters();
-            opListarPorPedido.setString(2, dono);
-            ResultSet resultado = opListarPorPedido.executeQuery();
+            opListarPorDono.clearParameters();
+            opListarPorDono.setString(2, dono);
+            ResultSet resultado = opListarPorDono.executeQuery();
 
             while (resultado.next()) {
                 Pedido novoPedido = new Pedido();
@@ -108,22 +121,47 @@ public class PedidoDAO {
                 novoPedido.setDono(resultado.getString("dono"));
                 novoPedido.setValor(resultado.getDouble("valor"));
                 novoPedido.setNome(resultado.getString("nome"));
-                novoPedido.setAtualizacao(resultado.getDate("atualizacao"));
+                novoPedido.setAtualizacao(resultado.getTimestamp("atualizacao"));
             }
-
             return p;
         } catch (SQLException ex) {
             throw new Exception("Erro ao buscar um pedido no listar!", ex);
         }
     }
 
-    public void edita(String nome) throws Exception{
+    public float listarTotalPorDono(String dono) throws Exception {
         try {
-            
+            float valor = 0;
+            opListarTotalPorDono.setString(1, dono);
+            ResultSet resultado = opListarTotalPorDono.executeQuery();
+            while (resultado.next()) {
+                valor = resultado.getFloat(1);
+            }
+            return valor;
         } catch (SQLException ex) {
-            throw new Exception("Erro ao editar o pedido!", ex);
+            throw new Exception("Erro ao buscar pedidos no banco", ex);
         }
+    }
 
+    public Pedido listarPorId(int id) throws Exception {
+        try {
+            Pedido pedido = null;
+            opBuscarPorId.clearParameters();
+            opBuscarPorId.setLong(1, id);
+            ResultSet resultado = opBuscarPorId.executeQuery();
+            if (resultado.next()) {
+                pedido = new Pedido();
+                pedido.setId(resultado.getInt("id"));
+                pedido.setPedido(resultado.getInt("pedido"));
+                pedido.setDono(resultado.getString("dono"));
+                pedido.setValor(resultado.getDouble("valor"));
+                pedido.setNome(resultado.getString("nome"));
+                pedido.setAtualizacao(resultado.getTimestamp("atualizacao"));
+            }
+            return pedido;
+        } catch (SQLException ex) {
+            throw new Exception("Erro ao buscar pedidos no banco", ex);
+        }
     }
 
     public void atualiza(Pedido pedido) throws Exception {
@@ -134,13 +172,10 @@ public class PedidoDAO {
             opAtualiza.setDouble(3, pedido.getValor());
             opAtualiza.setString(4, pedido.getNome());
             opAtualiza.setInt(5, pedido.getId());
-            //opAtualiza.setDate(5, pedido.getAtualizacao());
-
             opAtualiza.executeUpdate();
 
         } catch (SQLException ex) {
             throw new Exception("Erro ao atualizar o pedido!", ex);
         }
     }
-
 }
